@@ -13,6 +13,7 @@ interface ReviewsProps {
 export default function Reviews({ category }: ReviewsProps) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [formData, setFormData] = useState<ReviewData>({
     name: '',
     rating: 5,
@@ -32,10 +33,12 @@ export default function Reviews({ category }: ReviewsProps) {
   const fetchReviews = async () => {
     try {
       setLoading(true);
+      setFetchError(null);
       const data = await getReviews(category);
       setReviews(data);
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      setFetchError(error instanceof Error ? error.message : 'Failed to load reviews');
     } finally {
       setLoading(false);
     }
@@ -128,6 +131,22 @@ export default function Reviews({ category }: ReviewsProps) {
             <div className="inline-block animate-spin text-4xl text-blue-600">⏳</div>
             <p className="mt-4 text-gray-600">Loading reviews...</p>
           </div>
+        ) : fetchError ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-12 bg-red-50 rounded-xl border border-red-200"
+          >
+            <FiAlertCircle className="text-4xl text-red-600 mx-auto mb-4" />
+            <p className="text-red-800 font-semibold mb-2">Error Loading Reviews</p>
+            <p className="text-red-600 text-sm mb-4">{fetchError}</p>
+            <button
+              onClick={fetchReviews}
+              className="px-6 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+            >
+              Try Again
+            </button>
+          </motion.div>
         ) : reviews.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}

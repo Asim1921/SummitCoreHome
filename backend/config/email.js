@@ -19,8 +19,8 @@ transporter.verify((error, success) => {
 });
 
 // Function to send email notification
-const sendContactNotification = async (submission) => {
-  const { name, email, phone, serviceType, message } = submission;
+const sendContactNotification = async (submission, imagePath = null) => {
+  const { name, email, phone, streetAddress, city, state, zipCode, serviceType, message } = submission;
 
   // Format service type for display
   const serviceTypeMap = {
@@ -72,6 +72,10 @@ const sendContactNotification = async (submission) => {
                 <div class="value">${phone}</div>
               </div>
               <div class="field">
+                <span class="label">Address:</span>
+                <div class="value">${streetAddress}<br>${city}, ${state} ${zipCode}</div>
+              </div>
+              <div class="field">
                 <span class="label">Service Type:</span>
                 <div class="value">${formattedServiceType}</div>
               </div>
@@ -83,6 +87,12 @@ const sendContactNotification = async (submission) => {
                 <span class="label">Submitted At:</span>
                 <div class="value">${new Date(submission.createdAt || Date.now()).toLocaleString()}</div>
               </div>
+              ${imagePath ? `
+              <div class="field">
+                <span class="label">Image Attached:</span>
+                <div class="value">Yes - See attachment</div>
+              </div>
+              ` : ''}
             </div>
             <div class="footer">
               <p>This email was sent from the Summit Core contact form.</p>
@@ -97,10 +107,18 @@ New Contact Form Submission - Summit Core
 Name: ${name}
 Email: ${email}
 Phone: ${phone}
+Address: ${streetAddress}, ${city}, ${state} ${zipCode}
 Service Type: ${formattedServiceType}
 Message: ${message}
 Submitted At: ${new Date(submission.createdAt || Date.now()).toLocaleString()}
+${imagePath ? 'Image: Attached' : ''}
     `,
+    attachments: imagePath ? [
+      {
+        filename: imagePath,
+        path: require('path').join(__dirname, '../uploads', imagePath),
+      },
+    ] : [],
   };
 
   try {

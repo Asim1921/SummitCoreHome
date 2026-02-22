@@ -131,4 +131,5 @@ Desktop.ini
 # Uploads (if any)
 uploads/
 public/uploads/
+!uploads/.gitkeep
 

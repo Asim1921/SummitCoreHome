@@ -4,6 +4,10 @@ export interface ContactFormData {
   name: string;
   email: string;
   phone: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zipCode: string;
   serviceType: string;
   message: string;
 }
@@ -65,18 +69,39 @@ export async function getReviews(category?: 'kitchen' | 'bathroom' | 'flooring')
     ? `${API_URL}/api/reviews/${category}`
     : `${API_URL}/api/reviews`;
   
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-  if (!response.ok) {
-    throw new Error('Failed to fetch reviews');
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `Failed to fetch reviews: ${response.status} ${response.statusText}`);
+    }
+
+    const result = await response.json();
+    return result.data || [];
+  } catch (error) {
+    // Handle network errors, timeouts, etc.
+    if (error instanceof Error) {
+      if (error.name === 'AbortError' || error.message.includes('timeout')) {
+        throw new Error('Request timed out. Please check if the backend server is running.');
+      }
+      if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Network request failed')) {
+        throw new Error(`Cannot connect to backend server at ${API_URL}. Please ensure the backend is running on port 5000.`);
+      }
+      throw error;
+    }
+    throw new Error('An unexpected error occurred while fetching reviews');
   }
-
-  const result = await response.json();
-  return result.data;
 }
 

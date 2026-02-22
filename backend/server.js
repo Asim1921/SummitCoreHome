@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const multer = require('multer');
 const connectDB = require('./config/database');
 
 // Load environment variables
@@ -32,9 +33,25 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
+// Error handling middleware (must be after routes)
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  console.error('Error:', err);
+  
+  // Handle multer errors
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({
+        success: false,
+        message: 'File size too large. Maximum size is 5MB.',
+      });
+    }
+    return res.status(400).json({
+      success: false,
+      message: 'File upload error: ' + err.message,
+    });
+  }
+  
+  // Handle other errors
   res.status(500).json({
     success: false,
     message: 'Something went wrong!',
